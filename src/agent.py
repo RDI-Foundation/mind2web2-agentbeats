@@ -155,6 +155,18 @@ class Agent:
         if num_tasks:
             all_tasks = dict(list(all_tasks.items())[:num_tasks])
 
+        num_instances = request.config.get("num_instances", None)
+        if num_instances is not None:
+            all_tasks = dict(list(all_tasks.items())[:int(num_instances)])
+
+        shard_index = request.config.get("shard_index", None)
+        num_shards = request.config.get("num_shards", None)
+        if num_shards is not None and int(num_shards) > 1:
+            idx = int(shard_index or 0)
+            n = int(num_shards)
+            items = list(all_tasks.items())
+            all_tasks = dict(items[i] for i in range(len(items)) if i % n == idx)
+
         if not all_tasks:
             await updater.reject(
                 new_agent_text_message(f"No eval scripts found for domain={domain}")
@@ -163,10 +175,14 @@ class Agent:
 
         max_concurrent = int(request.config.get("max_concurrent", 10))
 
+        shard_info = ""
+        if num_shards is not None and int(num_shards) > 1:
+            shard_info = f", shard {int(shard_index or 0)}/{int(num_shards)}"
+
         await updater.update_status(
             TaskState.working,
             new_agent_text_message(
-                f"Evaluating {len(all_tasks)} tasks from {domain} (concurrency={max_concurrent})"
+                f"Evaluating {len(all_tasks)} tasks from {domain} (concurrency={max_concurrent}{shard_info})"
             )
         )
 
