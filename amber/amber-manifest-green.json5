@@ -1,21 +1,6 @@
 {
-  manifest_version: "0.3.0",
-  program: {
-    image: "ghcr.io/rdi-foundation/mind2web2-agentbeats:latest",
-    entrypoint: ["uv", "run", "src/server.py", "--host", "0.0.0.0", "--port", "8081"],
-    env: {
-      OPENAI_API_KEY: "${config.openai_api_key}",
-      GEMINI_API_KEY: "${config.gemini_api_key}",
-      DEEPSEEK_API_KEY: "${config.deepseek_api_key}",
-      AGENT_LLM: "${config.judge_llm}",
-      LOG_LEVEL: "INFO",
-    },
-    network: {
-      endpoints: [
-        { name: "endpoint", port: 8081 },
-      ],
-    },
-  },
+  manifest_version: "0.1.0",
+
   config_schema: {
     type: "object",
     properties: {
@@ -27,13 +12,38 @@
     required: [],
     additionalProperties: false,
   },
+
   slots: {
-    proxy: { kind: "a2a", optional: true },
+    proxy: { kind: "a2a" },
   },
+
+  program: {
+    image: "ghcr.io/andrew7234/mind2web2-agentbeats:latest",
+    entrypoint: "xvfb-run uv run src/server.py --host 0.0.0.0 --port 9009",
+
+    env: {
+      PYTHONUNBUFFERED: "1",
+      AMBER_HINT_PROXY: "${slots.proxy}",
+      OPENAI_API_KEY: "${config.openai_api_key}",
+      GEMINI_API_KEY: "${config.gemini_api_key}",
+      DEEPSEEK_API_KEY: "${config.deepseek_api_key}",
+      AGENT_LLM: "${config.judge_llm}",
+      LOG_LEVEL: "INFO",
+    },
+
+    network: {
+      endpoints: [
+        { name: "a2a_endpoint", port: 9009 },
+      ],
+    },
+  },
+
   provides: {
-    a2a: { kind: "a2a", endpoint: "endpoint" },
+    a2a: { kind: "a2a", endpoint: "a2a_endpoint" },
   },
-  exports: { a2a: "provides.a2a" },
+
+  exports: { a2a: "a2a" },
+
   metadata: {
     assessment_config: {
       domain: "dev_set",
