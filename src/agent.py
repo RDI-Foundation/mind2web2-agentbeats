@@ -168,8 +168,20 @@ class Agent:
             all_tasks = dict(items[i] for i in range(len(items)) if i % n == idx)
 
         if not all_tasks:
-            await updater.reject(
-                new_agent_text_message(f"No eval scripts found for domain={domain}")
+            result_data = {
+                "domain": domain,
+                "score": 0,
+                "max_score": 0,
+                "avg_score": 0,
+                "task_scores": {},
+                "time_used": 0,
+            }
+            await updater.add_artifact(
+                parts=[
+                    Part(root=TextPart(text=f"No tasks assigned to this shard for domain={domain}")),
+                    Part(root=DataPart(data=result_data)),
+                ],
+                name="Result",
             )
             return
 
